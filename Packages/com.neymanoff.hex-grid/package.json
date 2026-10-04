@@ -1,0 +1,35 @@
+{
+  "name": "com.neymanoff.hex-grid",
+  "displayName": "Universal Hex Grid & Targeting Engine",
+  "version": "1.0.0",
+  "unity": "6000.5",
+  "description": "High-performance modular hexagonal grid, A* pathfinding, and spatial targeting engine for tactical RPGs. Built on Unity Tilemap with a pure C# headless core.",
+  "keywords": [
+    "hex",
+    "grid",
+    "tilemap",
+    "tactical",
+    "pathfinding",
+    "a-star",
+    "targeting",
+    "turn-based",
+    "rpg",
+    "headless",
+    "modular"
+  ],
+  "dependencies": {
+    "com.unity.inputsystem": "1.20.0",
+    "com.unity.modules.tilemap": "1.0.0"
+  },
+  "samples": [
+    {
+      "displayName": "Greybox Tactical Demo",
+      "description": "Interactive showcase demonstrating hex movement, obstacle avoidance, and dynamic AOE targeting projections (Cone, Line, Blast) on a painted Tilemap.",
+      "path": "Samples~/Demo"
+    }
+  ],
+  "author": {
+    "name": "Oleg Neyman",
+    "email": "neymanoff@gmail.com"
+  }
+}
