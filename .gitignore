@@ -73,3 +73,8 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Local AI Agent instructions, project agreements & backlog tracking (kept local, untracked in public repo)
+AGENTS.md
+MODULAR_DEVELOPMENT_AGREEMENTS.md
+TODO.md
