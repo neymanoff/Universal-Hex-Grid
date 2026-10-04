@@ -34,10 +34,10 @@ namespace Neymanoff.HexGrid.Unity
 
         [Header("Plane Configuration")]
         [Tooltip("Orientation of the grid plane in world space (XY for 2D, XZ for 3D).")]
-        [SerializeField] private GridPlaneOrientation _planeOrientation = GridPlaneOrientation.XY;
+        [SerializeField] private GridPlaneOrientation _planeOrientation = GridPlaneOrientation.XZ;
 
         [Tooltip("Offset position along the plane normal (e.g. Z for XY, Y for XZ).")]
-        [SerializeField] private float _planeOffset = 0f;
+        [SerializeField] private float _planeOffset = 0.01f;
 
         /// <summary>Fired when the pointer hovers over a different hex cell.</summary>
         public event Action<HexCoord> OnCellHovered;
@@ -47,6 +47,17 @@ namespace Neymanoff.HexGrid.Unity
 
         private HexCoord _lastHoveredCoord;
         private bool _hasHoveredCell;
+
+        /// <summary>
+        /// Explicitly wires the picker dependencies and plane configuration.
+        /// </summary>
+        public void Configure(HexTilemapBridge bridge, Camera targetCamera = null, GridPlaneOrientation orientation = GridPlaneOrientation.XZ, float planeOffset = 0.01f)
+        {
+            _bridge = bridge;
+            _targetCamera = targetCamera != null ? targetCamera : Camera.main;
+            _planeOrientation = orientation;
+            _planeOffset = planeOffset;
+        }
 
         private void Awake()
         {

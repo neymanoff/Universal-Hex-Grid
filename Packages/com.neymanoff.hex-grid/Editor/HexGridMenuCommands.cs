@@ -1,3 +1,4 @@
+using Neymanoff.HexGrid.Core;
 using Neymanoff.HexGrid.Unity;
 using UnityEditor;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace Neymanoff.HexGrid.Editor
         [MenuItem("GameObject/Hex Grid/Create Tactical Grid Setup", false, 10)]
         public static void CreateTacticalGridSetup(MenuCommand menuCommand)
         {
-            // 1. Root Grid GameObject
+            // 1. Root Grid GameObject (Laid horizontally on XZ Ground plane at Y = 0.01)
             var gridGo = new GameObject("Hex Grid");
             Undo.RegisterCreatedObjectUndo(gridGo, "Create Hex Grid Setup");
 
@@ -23,89 +24,129 @@ namespace Neymanoff.HexGrid.Editor
                 GameObjectUtility.SetParentAndAlign(gridGo, parent);
             }
 
+            gridGo.transform.localPosition = new Vector3(0f, 0.01f, 0f);
+            gridGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+
             var grid = gridGo.AddComponent<Grid>();
             grid.cellLayout = GridLayout.CellLayout.Hexagon;
             grid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
-            grid.cellSize = new Vector3(1f, 1f, 1f);
+            // Pointy-Top exact aspect ratio (sqrt(3)/2 ≈ 0.8659766) matches Legends: Legacy of the Lost
+            grid.cellSize = new Vector3(0.8659766f, 1f, 1f);
 
             // 2. Walkable Tilemap
             var walkableGo = new GameObject("Walkable Tilemap");
             GameObjectUtility.SetParentAndAlign(walkableGo, gridGo);
             var walkableTilemap = walkableGo.AddComponent<Tilemap>();
-            walkableGo.AddComponent<TilemapRenderer>();
+            walkableTilemap.tileAnchor = Vector3.zero;
+            var walkableRenderer = walkableGo.AddComponent<TilemapRenderer>();
+            walkableRenderer.sortingOrder = 0;
 
             // 3. Obstacle Tilemap
             var obstacleGo = new GameObject("Obstacle Tilemap");
             GameObjectUtility.SetParentAndAlign(obstacleGo, gridGo);
             var obstacleTilemap = obstacleGo.AddComponent<Tilemap>();
-            obstacleGo.AddComponent<TilemapRenderer>();
+            obstacleTilemap.tileAnchor = Vector3.zero;
+            var obstacleRenderer = obstacleGo.AddComponent<TilemapRenderer>();
+            obstacleRenderer.sortingOrder = 5;
 
             // 4. Highlight Overlay Tilemap
             var overlayGo = new GameObject("Highlight Overlay");
             GameObjectUtility.SetParentAndAlign(overlayGo, gridGo);
             var overlayTilemap = overlayGo.AddComponent<Tilemap>();
+            overlayTilemap.tileAnchor = Vector3.zero;
             var overlayRenderer = overlayGo.AddComponent<TilemapRenderer>();
-            overlayRenderer.sortingOrder = 10; // Render on top of terrain
+            overlayRenderer.sortingOrder = 10;
 
             var overlay = overlayGo.AddComponent<TilemapHighlightOverlay>();
-            var overlayField = typeof(TilemapHighlightOverlay).GetField("_overlayTilemap",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            overlayField?.SetValue(overlay, overlayTilemap);
 
-            // 5. Attach Bridge
+            // Load default tile assets from package
+            var groundTile = AssetDatabase.LoadAssetAtPath<TileBase>("Packages/com.neymanoff.hex-grid/Runtime/Tiles/HexTile_Ground.asset");
+            var obstacleTile = AssetDatabase.LoadAssetAtPath<TileBase>("Packages/com.neymanoff.hex-grid/Runtime/Tiles/HexTile_Obstacle.asset");
+            var highlightTile = AssetDatabase.LoadAssetAtPath<TileBase>("Packages/com.neymanoff.hex-grid/Runtime/Tiles/HexTile_Highlight.asset");
+            var highlightOutlineTile = AssetDatabase.LoadAssetAtPath<TileBase>("Packages/com.neymanoff.hex-grid/Runtime/Tiles/HexTile_Highlight_Outline.asset");
+
+            overlay.Configure(overlayTilemap, highlightTile, highlightOutlineTile);
+            overlay.RenderMode = HighlightRenderMode.Outline;
+
+            // Paint initial demo island (radius 3 = 37 cells)
+            if (groundTile != null)
+            {
+                for (int q = -3; q <= 3; q++)
+                {
+                    int rMin = Mathf.Max(-3, -q - 3);
+                    int rMax = Mathf.Min(3, -q + 3);
+                    for (int r = rMin; r <= rMax; r++)
+                    {
+                        walkableTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(q, r)), groundTile);
+                    }
+                }
+            }
+
+            // Paint 3 demo obstacles
+            if (obstacleTile != null)
+            {
+                obstacleTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(1, 0)), obstacleTile);
+                obstacleTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(0, 2)), obstacleTile);
+                obstacleTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(-1, -1)), obstacleTile);
+            }
+
+            // 5. Attach Bridge with 0.3 unit height offset and Inspector geometry controls
             var bridge = gridGo.AddComponent<HexTilemapBridge>();
-            var bridgeGridField = typeof(HexTilemapBridge).GetField("_grid",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            bridgeGridField?.SetValue(bridge, grid);
+            bridge.Configure(grid, walkableTilemap, obstacleTilemap);
+            bridge.UnitHeightOffset = 0.3f;
+            bridge.ApplyGridDimensions();
 
-            var bridgeWalkableField = typeof(HexTilemapBridge).GetField("_walkableTilemap",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            bridgeWalkableField?.SetValue(bridge, walkableTilemap);
+            // 6. Attach 3D Spawner foundation
+            var spawner = gridGo.AddComponent<HexGrid3DSpawner>();
 
-            var bridgeObstacleField = typeof(HexTilemapBridge).GetField("_obstacleTilemap",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            bridgeObstacleField?.SetValue(bridge, obstacleTilemap);
-
-            // 6. Attach Pointer Picker
+            // 7. Attach Pointer Picker configured for 3D ground plane (XZ at Y = 0.01)
             var picker = gridGo.AddComponent<TilemapPointerPicker>();
-            var pickerBridgeField = typeof(TilemapPointerPicker).GetField("_bridge",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            pickerBridgeField?.SetValue(picker, bridge);
+            picker.Configure(bridge, Camera.main, GridPlaneOrientation.XZ, 0.01f);
 
-            // 7. Create Greybox Unit (Cube)
+            // 8. Create Greybox Unit (Cube standing on cell surface)
             var unitGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
             unitGo.name = "Greybox Hero";
             unitGo.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+            unitGo.transform.position = bridge.HexToUnitWorld(HexCoord.Zero);
             Undo.RegisterCreatedObjectUndo(unitGo, "Create Greybox Hero");
 
             var mover = unitGo.AddComponent<GridMover>();
-            var moverBridgeField = typeof(GridMover).GetField("_bridge",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            moverBridgeField?.SetValue(mover, bridge);
+            mover.Configure(bridge);
 
-            // 8. Create Demo Controller
+            // 9. Create Demo Controller
             var controllerGo = new GameObject("Demo Controller");
             Undo.RegisterCreatedObjectUndo(controllerGo, "Create Demo Controller");
 
             var controller = controllerGo.AddComponent<HexDemoController>();
-            var ctrlBridgeField = typeof(HexDemoController).GetField("_bridge",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            ctrlBridgeField?.SetValue(controller, bridge);
+            controller.Configure(bridge, overlay, picker, mover);
 
-            var ctrlOverlayField = typeof(HexDemoController).GetField("_overlay",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            ctrlOverlayField?.SetValue(controller, overlay);
+            // 10. Configure Main Camera for 3D tactical perspective view (angled top-down)
+            var cam = Camera.main;
+            if (cam != null)
+            {
+                Undo.RecordObject(cam.transform, "Align Camera to Hex Grid");
+                Undo.RecordObject(cam, "Set Tactical Camera");
+                cam.transform.position = new Vector3(0f, 7.5f, -6.3f);
+                cam.transform.rotation = Quaternion.Euler(50f, 0f, 0f);
+                cam.orthographic = false;
+                cam.fieldOfView = 45f;
+            }
 
-            var ctrlPickerField = typeof(HexDemoController).GetField("_pointerPicker",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            ctrlPickerField?.SetValue(controller, picker);
-
-            var ctrlUnitField = typeof(HexDemoController).GetField("_unit",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            ctrlUnitField?.SetValue(controller, mover);
+            // Mark all created scene objects dirty for persistent serialization
+            EditorUtility.SetDirty(gridGo);
+            EditorUtility.SetDirty(walkableGo);
+            EditorUtility.SetDirty(obstacleGo);
+            EditorUtility.SetDirty(overlayGo);
+            EditorUtility.SetDirty(bridge);
+            EditorUtility.SetDirty(spawner);
+            EditorUtility.SetDirty(overlay);
+            EditorUtility.SetDirty(picker);
+            EditorUtility.SetDirty(unitGo);
+            EditorUtility.SetDirty(mover);
+            EditorUtility.SetDirty(controllerGo);
+            EditorUtility.SetDirty(controller);
 
             Selection.activeGameObject = gridGo;
-            EditorUtility.SetDirty(gridGo);
         }
     }
 }

@@ -22,6 +22,7 @@ namespace Neymanoff.HexGrid.Unity.Tests
             _grid = _testRoot.AddComponent<Grid>();
             _grid.cellLayout = GridLayout.CellLayout.Hexagon;
             _grid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
+            _grid.cellSize = new Vector3(0.8659766f, 1f, 1f);
 
             var walkableGo = new GameObject("WalkableTilemap");
             walkableGo.transform.SetParent(_testRoot.transform);
@@ -34,19 +35,8 @@ namespace Neymanoff.HexGrid.Unity.Tests
             obstacleGo.AddComponent<TilemapRenderer>();
 
             _bridge = _testRoot.AddComponent<HexTilemapBridge>();
-
-            // Use reflection or serialized fields to assign tilemaps
-            var walkableField = typeof(HexTilemapBridge).GetField("_walkableTilemap",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            walkableField?.SetValue(_bridge, _walkableTilemap);
-
-            var obstacleField = typeof(HexTilemapBridge).GetField("_obstacleTilemap",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            obstacleField?.SetValue(_bridge, _obstacleTilemap);
-
-            var gridField = typeof(HexTilemapBridge).GetField("_grid",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            gridField?.SetValue(_bridge, _grid);
+            _bridge.Configure(_grid, _walkableTilemap, _obstacleTilemap);
+            _bridge.UnitHeightOffset = 0.3f;
         }
 
         [TearDown]
@@ -120,6 +110,34 @@ namespace Neymanoff.HexGrid.Unity.Tests
 
             var recoveredHex = _bridge.WorldToHex(worldPos);
             Assert.AreEqual(hex, recoveredHex, "Converting Hex -> World -> Hex should preserve coordinate.");
+        }
+
+        [Test]
+        public void HexToUnitWorld_ElevatesPositionByHeightOffset()
+        {
+            var hex = new HexCoord(0, 0);
+            Vector3 groundPos = _bridge.HexToWorld(hex);
+            Vector3 unitPos = _bridge.HexToUnitWorld(hex);
+
+            Assert.AreEqual(groundPos.x, unitPos.x, 0.001f);
+            Assert.AreEqual(groundPos.z, unitPos.z, 0.001f);
+            Assert.AreEqual(groundPos.y + 0.3f, unitPos.y, 0.001f, "Unit position should be elevated by height offset along Y axis.");
+        }
+
+        [Test]
+        public void WorldPositionConversions_WorkWith3DGroundPlaneRotation()
+        {
+            // Rotate grid 90 degrees around X to lay flat on XZ ground plane
+            _testRoot.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+
+            var hex = new HexCoord(1, -2);
+            var worldPos = _bridge.HexToWorld(hex);
+
+            // In 3D ground plane, Y should be flat (0) and Z should be depth
+            Assert.AreEqual(0f, worldPos.y, 0.001f, "Ground plane cell center Y should be zero.");
+
+            var recoveredHex = _bridge.WorldToHex(worldPos);
+            Assert.AreEqual(hex, recoveredHex, "Converting Hex -> 3D World (XZ) -> Hex should preserve coordinate.");
         }
     }
 }

@@ -46,6 +46,14 @@ namespace Neymanoff.HexGrid.Unity
 
         private Coroutine _moveCoroutine;
 
+        /// <summary>
+        /// Explicitly wires the bridge dependency without requiring reflection.
+        /// </summary>
+        public void Configure(HexTilemapBridge bridge)
+        {
+            _bridge = bridge;
+        }
+
         private void Awake()
         {
             if (_bridge == null)
@@ -59,14 +67,14 @@ namespace Neymanoff.HexGrid.Unity
         }
 
         /// <summary>
-        /// Snaps the object immediately to the center of the specified hex coordinate.
+        /// Snaps the object immediately to the center of the specified hex coordinate (elevated by unit height offset).
         /// </summary>
         public void TeleportTo(HexCoord coord)
         {
             StopMovement();
             CurrentCoord = coord;
             if (_bridge != null)
-                transform.position = _bridge.HexToWorld(coord);
+                transform.position = _bridge.HexToUnitWorld(coord);
         }
 
         /// <summary>
@@ -112,7 +120,7 @@ namespace Neymanoff.HexGrid.Unity
             {
                 var targetCoord = path[i];
                 Vector3 targetWorld = _bridge != null
-                    ? _bridge.HexToWorld(targetCoord)
+                    ? _bridge.HexToUnitWorld(targetCoord)
                     : transform.position;
 
                 while (Vector3.Distance(transform.position, targetWorld) > _arrivalThreshold)

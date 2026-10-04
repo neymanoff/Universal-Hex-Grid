@@ -59,6 +59,17 @@ namespace Neymanoff.HexGrid.Unity
 
         public DemoInteractionMode CurrentMode => _mode;
 
+        /// <summary>
+        /// Explicitly wires controller scene references.
+        /// </summary>
+        public void Configure(HexTilemapBridge bridge, TilemapHighlightOverlay overlay, TilemapPointerPicker pointerPicker, GridMover unit)
+        {
+            _bridge = bridge;
+            _overlay = overlay;
+            _pointerPicker = pointerPicker;
+            _unit = unit;
+        }
+
         private void OnEnable()
         {
             if (_pointerPicker != null)

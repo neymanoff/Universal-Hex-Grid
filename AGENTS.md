@@ -35,6 +35,34 @@ This project targets the exact Unity version recorded in `ProjectSettings/Projec
 
 ---
 
-## 4. Git & Asset Safety
+## 4. Source-First Grounding & Architectural Truth
+1. **Mandatory Source Code Inspection**:
+   * Before writing, generating, or refactoring ANY code in an extracted module, the agent MUST first inspect and cite the corresponding working files in the main game (`d:\Unity\My Projects\LegendsLegacyOfLost`).
+   * Never invent new abstractions or speculative architectures without first verifying how the system was originally solved in `Legends: Legacy of the Lost`.
+2. **Tactical Grid Specifications (Legends Ground Truth)**:
+   * **Pointy-Top Aspect Ratio**: `cellSize` in `Grid` MUST strictly equal `(0.8659766f, 1f, 1f)` ($\frac{\sqrt{3}}{2} \approx 0.8660254$), matching `Grid_Battle_Formation_HexPT.prefab`. Never use `(1, 1, 1)` which distorts horizontal spacing by 15.5%.
+   * **3D Ground Plane (XZ)**: Tactical combat takes place in 3D world space on the ground plane (XZ horizontal, Y up). Units stand on top of cell surfaces with proper vertical pivot height offsets, never sinking into the ground or floating in a vertical 2D XY wall.
+   * **Dual Scope Requirement**: The hex grid module MUST cover BOTH core pillars:
+     1. **Battle Preparation & Formations**: Formation templates (2-3, 3-2, 1-2-1), anchor alignment, 120°/180° orientation, tilemap sampling, and UI layout conversion (`FormationPlanner`, `HexTilemapSampler`, `HexUiLayoutConverter`, `CellOwner`).
+     2. **3D Tactical Combat**: Turn movement, AP budget, unit-cell occupancy (`GridOccupant`), A* pathfinding, Dijkstra flood fill, and AoE target projections (120° cone, line, ring, blast).
+3. **Step-by-Step Discipline & Communication**:
+   * Strictly execute one bounded phase at a time. Never bundle multiple phases or jump ahead without explicit user review.
+   * If Unity batchmode CLI or background test execution is required, explicitly ask the developer to save and close the Unity Editor. Never run batchmode while the project is locked by an active Editor instance.
+
+## 5. Task Progression & Verification Protocol ([IMPLEMENTED] vs [VERIFIED])
+1. **Pre-Execution Registration**: Before writing any code, the intended task must be registered as `[IN PROGRESS]` in `TODO.md` with specific acceptance criteria.
+2. **"Implemented" vs "Verified"**:
+   * `[IMPLEMENTED]`: The agent has completed the code, passed 100% of automated NUnit CLI tests, and verified zero compilation errors.
+   * `[VERIFIED]`: The human developer has personally tested the feature in the Unity Editor PlayMode and explicitly confirmed that it works as expected.
+   * **STRICT PROHIBITION**: The agent is NEVER permitted to mark a task as `[VERIFIED]` on its own. Only the human developer grants verification status.
+3. **Contour/Outline Highlighting Rule**:
+   * Cell highlights must support both Solid fill and Outline/Contour modes (`HighlightStyle.Solid` and `HighlightStyle.Outline`).
+   * When underlying map art or tile illustrations are present, outline mode must preserve 100% visibility of the underlying artwork while clearly framing the active cell.
+4. **3D Modular Hex Spawner Requirement**:
+   * The module must support 3D physical hex meshes/prefabs (`HexGrid3DSpawner`) instantiated from 2D Tilemap authoring layouts.
+
+---
+
+## 6. Git & Asset Safety
 * **Manual Developer Commits**: The agent must NEVER execute `git commit`. The developer reviews all diffs and commits manually via GitHub Desktop. Upon completing work, the agent provides only the suggested commit `Summary` and `Description` in English.
 * **Unity Meta Files**: Every asset must have a valid `.meta` file. Never delete `.meta` files without verifying source existence.

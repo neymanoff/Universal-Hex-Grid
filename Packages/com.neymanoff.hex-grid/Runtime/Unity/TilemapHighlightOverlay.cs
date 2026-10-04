@@ -6,9 +6,25 @@ using UnityEngine.Tilemaps;
 namespace Neymanoff.HexGrid.Unity
 {
     /// <summary>
+    /// Supported visual highlight rendering styles.
+    /// </summary>
+    public enum HighlightRenderMode
+    {
+        /// <summary>
+        /// Solid filled tile polygon.
+        /// </summary>
+        Solid = 0,
+
+        /// <summary>
+        /// Outline contour ring with transparent interior, preserving 100% visibility of underlying map artwork.
+        /// </summary>
+        Outline = 1
+    }
+
+    /// <summary>
     /// Renders pathfinding, reachable zones, targeting shapes, and hover previews
-    /// onto an overlay <see cref="Tilemap"/> using Inspector-assigned Tile assets or colors.
-    /// Provides batch painting with zero GameObject instantiation.
+    /// onto an overlay <see cref="Tilemap"/> using Inspector-assigned Tile assets and colors.
+    /// Supports both solid fill and outline/contour framing modes with zero GameObject instantiation.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hex Grid/Tilemap Highlight Overlay")]
@@ -18,18 +34,38 @@ namespace Neymanoff.HexGrid.Unity
         [Tooltip("The Tilemap dedicated to rendering highlights.")]
         [SerializeField] private Tilemap _overlayTilemap;
 
-        [Header("Highlight Tiles (Inspector-Authored)")]
-        [Tooltip("Tile asset used for the reachable movement zone.")]
+        [Header("Render Mode")]
+        [Tooltip("Selects whether cells are highlighted with solid fills or transparent-center outline rings (preserving underlying artwork).")]
+        [SerializeField] private HighlightRenderMode _renderMode = HighlightRenderMode.Outline;
+
+        [Header("Solid Highlight Tiles")]
+        [Tooltip("Tile asset used for the reachable movement zone in Solid mode.")]
         [SerializeField] private TileBase _reachableZoneTile;
 
-        [Tooltip("Tile asset used for path waypoints.")]
+        [Tooltip("Tile asset used for path waypoints in Solid mode.")]
         [SerializeField] private TileBase _pathTile;
 
-        [Tooltip("Tile asset used for cell hover highlight.")]
+        [Tooltip("Tile asset used for cell hover highlight in Solid mode.")]
         [SerializeField] private TileBase _hoverTile;
 
-        [Tooltip("Tile asset used for AOE targeting shapes.")]
+        [Tooltip("Tile asset used for AOE targeting shapes in Solid mode.")]
         [SerializeField] private TileBase _targetTile;
+
+        [Header("Outline Highlight Tiles (Preserves Background Artwork)")]
+        [Tooltip("Default outline ring tile used as a fallback for all outline highlights.")]
+        [SerializeField] private TileBase _defaultOutlineTile;
+
+        [Tooltip("Optional custom outline tile for reachable movement zones.")]
+        [SerializeField] private TileBase _outlineReachableTile;
+
+        [Tooltip("Optional custom outline tile for path waypoints.")]
+        [SerializeField] private TileBase _outlinePathTile;
+
+        [Tooltip("Optional custom outline tile for cell hover highlight.")]
+        [SerializeField] private TileBase _outlineHoverTile;
+
+        [Tooltip("Optional custom outline tile for AOE targeting shapes.")]
+        [SerializeField] private TileBase _outlineTargetTile;
 
         [Header("Tint Colors")]
         [SerializeField] private Color _reachableColor = new(0.2f, 0.6f, 1f, 0.5f);
@@ -38,6 +74,46 @@ namespace Neymanoff.HexGrid.Unity
         [SerializeField] private Color _targetColor = new(1f, 0.2f, 0.2f, 0.7f);
 
         private readonly HashSet<Vector3Int> _activeHighlightedCells = new();
+
+        public HighlightRenderMode RenderMode
+        {
+            get => _renderMode;
+            set => _renderMode = value;
+        }
+
+        public Color ReachableColor { get => _reachableColor; set => _reachableColor = value; }
+        public Color PathColor { get => _pathColor; set => _pathColor = value; }
+        public Color HoverColor { get => _hoverColor; set => _hoverColor = value; }
+        public Color TargetColor { get => _targetColor; set => _targetColor = value; }
+
+        public TileBase ReachableTile => GetEffectiveTile(_reachableZoneTile, _outlineReachableTile);
+        public TileBase PathTile => GetEffectiveTile(_pathTile, _outlinePathTile);
+        public TileBase HoverTile => GetEffectiveTile(_hoverTile, _outlineHoverTile);
+        public TileBase TargetTile => GetEffectiveTile(_targetTile, _outlineTargetTile);
+
+        /// <summary>
+        /// Explicitly wires overlay dependencies and tiles.
+        /// </summary>
+        public void Configure(Tilemap overlayTilemap, TileBase defaultHighlightTile = null, TileBase defaultOutlineTile = null)
+        {
+            _overlayTilemap = overlayTilemap;
+            if (defaultHighlightTile != null)
+            {
+                if (_reachableZoneTile == null) _reachableZoneTile = defaultHighlightTile;
+                if (_pathTile == null) _pathTile = defaultHighlightTile;
+                if (_hoverTile == null) _hoverTile = defaultHighlightTile;
+                if (_targetTile == null) _targetTile = defaultHighlightTile;
+            }
+
+            if (defaultOutlineTile != null)
+            {
+                _defaultOutlineTile = defaultOutlineTile;
+                if (_outlineReachableTile == null) _outlineReachableTile = defaultOutlineTile;
+                if (_outlinePathTile == null) _outlinePathTile = defaultOutlineTile;
+                if (_outlineHoverTile == null) _outlineHoverTile = defaultOutlineTile;
+                if (_outlineTargetTile == null) _outlineTargetTile = defaultOutlineTile;
+            }
+        }
 
         private void Reset()
         {
@@ -59,7 +135,7 @@ namespace Neymanoff.HexGrid.Unity
         /// </summary>
         public void ShowReachableZone(IEnumerable<HexCoord> coords)
         {
-            SetHighlightGroup(coords, _reachableZoneTile, _reachableColor);
+            SetHighlightGroup(coords, ReachableTile, _reachableColor);
         }
 
         /// <summary>
@@ -67,7 +143,7 @@ namespace Neymanoff.HexGrid.Unity
         /// </summary>
         public void ShowPath(IEnumerable<HexCoord> path)
         {
-            SetHighlightGroup(path, _pathTile, _pathColor);
+            SetHighlightGroup(path, PathTile, _pathColor);
         }
 
         /// <summary>
@@ -75,7 +151,7 @@ namespace Neymanoff.HexGrid.Unity
         /// </summary>
         public void ShowTargetShape(IEnumerable<HexCoord> coords)
         {
-            SetHighlightGroup(coords, _targetTile, _targetColor);
+            SetHighlightGroup(coords, TargetTile, _targetColor);
         }
 
         /// <summary>
@@ -84,13 +160,14 @@ namespace Neymanoff.HexGrid.Unity
         public void ShowHover(HexCoord coord)
         {
             if (_overlayTilemap == null) return;
+            var tile = HoverTile;
+            if (tile == null) return;
+
             var cell = HexTilemapBridge.HexToTilemapCell(coord);
-            if (_hoverTile != null)
-            {
-                _overlayTilemap.SetTile(cell, _hoverTile);
-                _overlayTilemap.SetColor(cell, _hoverColor);
-                _activeHighlightedCells.Add(cell);
-            }
+            _overlayTilemap.SetTile(cell, tile);
+            _overlayTilemap.SetTileFlags(cell, TileFlags.None);
+            _overlayTilemap.SetColor(cell, _hoverColor);
+            _activeHighlightedCells.Add(cell);
         }
 
         /// <summary>
@@ -112,9 +189,22 @@ namespace Neymanoff.HexGrid.Unity
             {
                 var cell = HexTilemapBridge.HexToTilemapCell(coord);
                 _overlayTilemap.SetTile(cell, tile);
+                _overlayTilemap.SetTileFlags(cell, TileFlags.None);
                 _overlayTilemap.SetColor(cell, color);
                 _activeHighlightedCells.Add(cell);
             }
+        }
+
+        private TileBase GetEffectiveTile(TileBase solidTile, TileBase outlineTile)
+        {
+            if (_renderMode == HighlightRenderMode.Outline)
+            {
+                if (outlineTile != null) return outlineTile;
+                if (_defaultOutlineTile != null) return _defaultOutlineTile;
+                return solidTile;
+            }
+
+            return solidTile != null ? solidTile : (outlineTile != null ? outlineTile : _defaultOutlineTile);
         }
     }
 }

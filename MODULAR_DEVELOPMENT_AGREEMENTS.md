@@ -40,7 +40,8 @@
 * When extracting systems from the existing game into isolated modules, verify them using minimal greybox setups (cubes, spheres, simple canvas layouts, or unit tests) before assembling them with production art.
 * Each module must prove its autonomous functionality in an isolated sample/demo scene before being linked to the main game or other modules.
 
-### 3.2. Extraction Without Duplication (DRY Across Projects)
+### 3.2. Extraction Without Duplication (Source-First Rule)
+* **Inspect Source First**: Before writing, refactoring, or generating code in any extracted module, the agent MUST first inspect and cite the existing implementation in `Legends: Legacy of the Lost` (`d:\Unity\My Projects\LegendsLegacyOfLost`). Prohibit inventing speculative architectures from scratch when working code already exists.
 * Do not rewrite existing working game logic from scratch if it is already implemented in `LegendsLegacyOfLost`. Extract, isolate, and refactor the existing code into the dedicated module package.
 * Avoid duplicating logic across different modular projects. Shared foundational contracts, utilities, or data models must reside in shared packages (e.g., UPM local/git dependencies or shared domain libraries) rather than copy-pasted across repositories.
 
@@ -52,15 +53,34 @@ Every extracted module must be structured to support two usage modes:
    - The core domain logic (combat math, grid algorithms, inventory management, stat calculations) must remain decoupled from `UnityEngine.dll`.
    - Allows running the exact same logic on a local machine or remote server (single server or distributed microservices) without running graphics or engine overhead.
 
+### 3.4. Grounding in Real Game Dimensions & Conventions
+* Do not make naive 2D assumptions for 3D game mechanics.
+* Check exact math constants from source assets (e.g. Hex Pointy-Top ratio $\sqrt{3}/2 \approx 0.8659766$, 3D ground plane XZ, character pivot offsets).
+* Support the full scope of existing game features (e.g. pre-battle formation layouts, tilemap samplers, UI preview converters, in-combat movement and abilities).
+
+### 3.5. Step-by-Step Discipline & Tool Communication
+* Work strictly step-by-step. Do not jump across multiple phases or rush to conclusions without human developer confirmation.
+* If Unity batchmode CLI is required, explicitly request the developer to save and close the Editor. Never guess or run silent CLI tasks when the project is locked.
+
+### 3.6. Two-Stage Task Completion Protocol ([IMPLEMENTED] vs [VERIFIED])
+* **Pre-Work Logging**: Register tasks in `TODO.md` as `[IN PROGRESS]` before touching code.
+* **[IMPLEMENTED]**: Set when code is written, compiles without errors, and passes 100% automated CLI tests.
+* **[VERIFIED]**: Set ONLY after the human developer personally verifies the behavior in the Unity Editor and explicitly approves it. An agent NEVER sets `[VERIFIED]` autonomously.
+* **Contour/Outline Highlights**: Cell highlighting systems must support outline/contour framing to preserve visibility of underlying map textures, illustrations, and art.
+
 ---
 
 ## 4. Summary of Developer Agreements Checklist
 
 | Principle | Requirement | Violation Example |
 | :--- | :--- | :--- |
+| **Source-First** | Inspect existing game code before writing | Writing a brand-new grid or pathfinder from scratch without reading `LegendsLegacyOfLost` |
 | **Inspector-First** | Configure in Inspector/Prefabs/SO | Writing 200 lines of procedural C# code to create UI buttons or build a camera rig |
 | **No Reinventing** | Use official & free commercial packages | Authoring a custom tween engine or custom input polling instead of existing standard tools |
 | **Lean Code** | Clean, searchable, modular C# | Monolithic scripts that handle data, logic, UI, and visuals in one place |
-| **Greybox Test** | Validate with primitive shapes & demo scenes | Refusing to test until all complex art and external dependencies are imported |
+| **Domain Reality** | Respect 3D planes, exact ratios, full scope | Flat 2D XY wall assumptions, `(1,1,1)` hex sizing, ignoring formation placement |
+| **Outline Art** | Support contour highlight mode | Solid fill completely obscuring beautiful underlying terrain artwork |
+| **Two-Stage Verification** | `[IMPLEMENTED]` (agent) vs `[VERIFIED]` (human) | Agent declaring task finished without developer PlayMode sign-off |
+| **Step-by-Step** | One phase at a time with developer review | Completing 4 phases in one response and claiming "ready for the next module" |
 | **No Duplication** | Reuse extracted code via shared packages | Copy-pasting stat math or grid classes across 3 different projects |
 
