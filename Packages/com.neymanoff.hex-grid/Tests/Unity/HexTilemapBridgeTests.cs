@@ -1,0 +1,125 @@
+using System.Collections.Generic;
+using Neymanoff.HexGrid.Core;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+
+namespace Neymanoff.HexGrid.Unity.Tests
+{
+    [TestFixture]
+    public class HexTilemapBridgeTests
+    {
+        private GameObject _testRoot;
+        private Grid _grid;
+        private Tilemap _walkableTilemap;
+        private Tilemap _obstacleTilemap;
+        private HexTilemapBridge _bridge;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _testRoot = new GameObject("TestHexGridRoot");
+            _grid = _testRoot.AddComponent<Grid>();
+            _grid.cellLayout = GridLayout.CellLayout.Hexagon;
+            _grid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
+
+            var walkableGo = new GameObject("WalkableTilemap");
+            walkableGo.transform.SetParent(_testRoot.transform);
+            _walkableTilemap = walkableGo.AddComponent<Tilemap>();
+            walkableGo.AddComponent<TilemapRenderer>();
+
+            var obstacleGo = new GameObject("ObstacleTilemap");
+            obstacleGo.transform.SetParent(_testRoot.transform);
+            _obstacleTilemap = obstacleGo.AddComponent<Tilemap>();
+            obstacleGo.AddComponent<TilemapRenderer>();
+
+            _bridge = _testRoot.AddComponent<HexTilemapBridge>();
+
+            // Use reflection or serialized fields to assign tilemaps
+            var walkableField = typeof(HexTilemapBridge).GetField("_walkableTilemap",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            walkableField?.SetValue(_bridge, _walkableTilemap);
+
+            var obstacleField = typeof(HexTilemapBridge).GetField("_obstacleTilemap",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            obstacleField?.SetValue(_bridge, _obstacleTilemap);
+
+            var gridField = typeof(HexTilemapBridge).GetField("_grid",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            gridField?.SetValue(_bridge, _grid);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (_testRoot != null)
+            {
+                Object.DestroyImmediate(_testRoot);
+            }
+        }
+
+        [Test]
+        public void CoordinateConversion_MatchesStaticOddRMath()
+        {
+            var hex = new HexCoord(3, 4);
+            var cell = HexTilemapBridge.HexToTilemapCell(hex);
+
+            var expectedOddR = hex.ToOddR();
+            Assert.AreEqual(expectedOddR.col, cell.x);
+            Assert.AreEqual(expectedOddR.row, cell.y);
+
+            var backToHex = HexTilemapBridge.TilemapCellToHex(cell);
+            Assert.AreEqual(hex, backToHex);
+        }
+
+        [TestCase(0, 0)]
+        [TestCase(1, 0)]
+        [TestCase(0, 1)]
+        [TestCase(-3, 4)]
+        [TestCase(5, -6)]
+        [TestCase(-10, -10)]
+        public void Roundtrip_AllCoordinates_PreserveIdentity(int q, int r)
+        {
+            var originHex = new HexCoord(q, r);
+            var cell = HexTilemapBridge.HexToTilemapCell(originHex);
+            var resultHex = HexTilemapBridge.TilemapCellToHex(cell);
+
+            Assert.AreEqual(originHex, resultHex);
+        }
+
+        [Test]
+        public void CanEnter_WhenCellHasNoWalkableTile_ReturnsFalse()
+        {
+            var hex = new HexCoord(1, 1);
+            Assert.IsFalse(_bridge.CanEnter(hex), "Empty tilemap cell should not be enterable when walkable tile is required.");
+        }
+
+        [Test]
+        public void CanEnter_WhenObstaclePresent_ReturnsFalse()
+        {
+            var hex = new HexCoord(0, 0);
+            var cell = HexTilemapBridge.HexToTilemapCell(hex);
+
+            // Create a dummy tile
+            var dummyTile = ScriptableObject.CreateInstance<Tile>();
+
+            // Put tile on walkable tilemap
+            _walkableTilemap.SetTile(cell, dummyTile);
+            Assert.IsTrue(_bridge.CanEnter(hex), "Cell with walkable tile should be enterable.");
+
+            // Put tile on obstacle tilemap
+            _obstacleTilemap.SetTile(cell, dummyTile);
+            Assert.IsFalse(_bridge.CanEnter(hex), "Cell with obstacle tile should be impassable.");
+        }
+
+        [Test]
+        public void WorldPositionConversions_AreConsistentWithGrid()
+        {
+            var hex = new HexCoord(2, 3);
+            var worldPos = _bridge.HexToWorld(hex);
+
+            var recoveredHex = _bridge.WorldToHex(worldPos);
+            Assert.AreEqual(hex, recoveredHex, "Converting Hex -> World -> Hex should preserve coordinate.");
+        }
+    }
+}
