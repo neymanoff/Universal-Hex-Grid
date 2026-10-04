@@ -10,7 +10,7 @@
 | Phase | Milestone | Priority | Status |
 | :--- | :--- | :---: | :---: |
 | **Phase 0** | UPM Package Skeleton & Assembly Definitions | 🔴 Critical | ✅ Done |
-| **Phase 1** | Pure C# Hexagonal Coordinate Math (`HexCoord`) | 🔴 Critical | ⏳ Pending |
+| **Phase 1** | Pure C# Hexagonal Coordinate Math (`HexCoord`) | 🔴 Critical | ✅ Done |
 | **Phase 2** | Pure C# Pathfinding & Reachable Zone (`HexPathfinder`, `HexFloodFill`) | 🔴 Critical | ⏳ Pending |
 | **Phase 3** | Geometric Targeting & AOE Resolver (`HexTargetResolver`) | 🟡 High | ⏳ Pending |
 | **Phase 4** | Unity Tilemap Presentation Layer (`HexTilemapBridge`, Overlay) | 🟡 High | ⏳ Pending |
@@ -37,16 +37,16 @@
 ---
 
 ## Phase 1: Pure C# Hexagonal Coordinate Math
-- [ ] **1.1. `HexCoord` Immutable Struct**:
-  - [ ] Axial coordinates `(int Q, int R)` and cubic `int S => -Q - R`.
-  - [ ] Arithmetic operators `+`, `-`, `*`, `==`, `!=`.
-  - [ ] Directional neighbor methods using `HexDirection` enum.
-  - [ ] Exact O(1) distance calculation.
-  - [ ] Exact roundtrip conversions for Unity's Hexagon Point Top (Odd-R offset).
-- [ ] **1.2. Core Unit Tests**:
-  - [ ] Distance between arbitrary hexes.
-  - [ ] Roundtrip conversion between Axial and Odd-R coordinates.
-  - [ ] Neighbor direction indexing correctness.
+- [x] **1.1. `HexCoord` Immutable Struct**:
+  - [x] Axial coordinates `(int Q, int R)` and cubic `int S => -Q - R`.
+  - [x] Arithmetic operators `+`, `-`, `*`, `==`, `!=`.
+  - [x] Directional neighbor methods using `HexDirection` enum.
+  - [x] Exact O(1) distance calculation.
+  - [x] Exact roundtrip conversions for Unity's Hexagon Point Top (Odd-R offset).
+- [x] **1.2. Core Unit Tests**:
+  - [x] Distance between arbitrary hexes.
+  - [x] Roundtrip conversion between Axial and Odd-R coordinates.
+  - [x] Neighbor direction indexing correctness.
 
 ---
 
