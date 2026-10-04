@@ -9,7 +9,7 @@ namespace Neymanoff.HexGrid.Unity
     /// <summary>
     /// Smoothly moves a GameObject along a sequence of hex waypoints.
     /// Provides speed control, waypoint reached events, and completion callbacks.
-    /// Uses modern Unity 6 FindFirstObjectByType fallback without obsolete APIs.
+    /// Uses modern Unity 6 FindAnyObjectByType fallback without obsolete APIs.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hex Grid/Grid Mover")]
@@ -57,7 +57,7 @@ namespace Neymanoff.HexGrid.Unity
         private void Awake()
         {
             if (_bridge == null)
-                _bridge = FindFirstObjectByType<HexTilemapBridge>();
+                _bridge = FindAnyObjectByType<HexTilemapBridge>();
         }
 
         private void Start()

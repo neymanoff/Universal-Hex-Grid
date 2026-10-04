@@ -68,35 +68,21 @@ namespace Neymanoff.HexGrid.Editor
             overlay.Configure(overlayTilemap, highlightTile, highlightOutlineTile);
             overlay.RenderMode = HighlightRenderMode.Outline;
 
-            // Paint initial demo island (radius 3 = 37 cells)
-            if (groundTile != null)
-            {
-                for (int q = -3; q <= 3; q++)
-                {
-                    int rMin = Mathf.Max(-3, -q - 3);
-                    int rMax = Mathf.Min(3, -q + 3);
-                    for (int r = rMin; r <= rMax; r++)
-                    {
-                        walkableTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(q, r)), groundTile);
-                    }
-                }
-            }
-
-            // Paint 3 demo obstacles
-            if (obstacleTile != null)
-            {
-                obstacleTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(1, 0)), obstacleTile);
-                obstacleTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(0, 2)), obstacleTile);
-                obstacleTilemap.SetTile(HexTilemapBridge.HexToTilemapCell(new HexCoord(-1, -1)), obstacleTile);
-            }
-
             // 5. Attach Bridge with 0.3 unit height offset and Inspector geometry controls
             var bridge = gridGo.AddComponent<HexTilemapBridge>();
-            bridge.Configure(grid, walkableTilemap, obstacleTilemap);
+            bridge.Configure(grid, walkableTilemap, obstacleTilemap, overlay);
             bridge.UnitHeightOffset = 0.3f;
             bridge.ApplyGridDimensions();
 
-            // 6. Attach 3D Spawner foundation
+            // 6. Attach Procedural Grid Generator (editable in Inspector: shape, radius, width/height, obstacles)
+            var generator = gridGo.AddComponent<HexGridGenerator>();
+            generator.Configure(walkableTilemap, obstacleTilemap, groundTile, obstacleTile, bridge);
+            generator.Shape = HexGridShape.HexagonIsland;
+            generator.Radius = 3;
+            generator.ObstacleDensity = 0.08f;
+            generator.GenerateGrid();
+
+            // 7. Attach 3D Spawner foundation
             var spawner = gridGo.AddComponent<HexGrid3DSpawner>();
 
             // 7. Attach Pointer Picker configured for 3D ground plane (XZ at Y = 0.01)
@@ -138,6 +124,7 @@ namespace Neymanoff.HexGrid.Editor
             EditorUtility.SetDirty(obstacleGo);
             EditorUtility.SetDirty(overlayGo);
             EditorUtility.SetDirty(bridge);
+            EditorUtility.SetDirty(generator);
             EditorUtility.SetDirty(spawner);
             EditorUtility.SetDirty(overlay);
             EditorUtility.SetDirty(picker);

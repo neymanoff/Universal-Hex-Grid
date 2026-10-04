@@ -68,6 +68,13 @@ Every extracted module must be structured to support two usage modes:
 * **[VERIFIED]**: Set ONLY after the human developer personally verifies the behavior in the Unity Editor and explicitly approves it. An agent NEVER sets `[VERIFIED]` autonomously.
 * **Contour/Outline Highlights**: Cell highlighting systems must support outline/contour framing to preserve visibility of underlying map textures, illustrations, and art.
 
+### 3.7. Non-Destructive In-Place Evolution (No Delete-And-Recreate)
+* **Rule**: **NEVER instruct the developer to delete existing scene hierarchies, root GameObjects, or scenes to adopt or test new components.**
+* In a production environment with dozens or hundreds of authored maps, deleting the root object destroys hand-crafted level design, lighting, references, and scene-specific configurations.
+* All components must support **in-place non-destructive evolution**:
+  1. Adding a new component via `Add Component` on an existing object must gracefully self-heal and auto-wire dependencies via `Reset()` and `OnValidate()`.
+  2. Modifications to existing components must preserve existing serialized data, painted tilemaps, and designer overrides.
+
 ---
 
 ## 4. Summary of Developer Agreements Checklist
@@ -76,6 +83,7 @@ Every extracted module must be structured to support two usage modes:
 | :--- | :--- | :--- |
 | **Source-First** | Inspect existing game code before writing | Writing a brand-new grid or pathfinder from scratch without reading `LegendsLegacyOfLost` |
 | **Inspector-First** | Configure in Inspector/Prefabs/SO | Writing 200 lines of procedural C# code to create UI buttons or build a camera rig |
+| **Non-Destructive** | In-place evolution via `Add Component` / auto-wiring | Telling the developer: "Delete Hex Grid and re-run menu item to test the changes" |
 | **No Reinventing** | Use official & free commercial packages | Authoring a custom tween engine or custom input polling instead of existing standard tools |
 | **Lean Code** | Clean, searchable, modular C# | Monolithic scripts that handle data, logic, UI, and visuals in one place |
 | **Domain Reality** | Respect 3D planes, exact ratios, full scope | Flat 2D XY wall assumptions, `(1,1,1)` hex sizing, ignoring formation placement |

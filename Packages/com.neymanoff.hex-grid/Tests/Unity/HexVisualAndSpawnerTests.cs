@@ -12,6 +12,7 @@ namespace Neymanoff.HexGrid.Unity.Tests
         private GameObject _testRoot;
         private Grid _grid;
         private Tilemap _walkableTilemap;
+        private Tilemap _obstacleTilemap;
         private Tilemap _overlayTilemap;
         private HexTilemapBridge _bridge;
         private TilemapHighlightOverlay _overlay;
@@ -32,13 +33,17 @@ namespace Neymanoff.HexGrid.Unity.Tests
             walkableGo.transform.SetParent(_testRoot.transform);
             _walkableTilemap = walkableGo.AddComponent<Tilemap>();
 
+            var obstacleGo = new GameObject("ObstacleTilemap");
+            obstacleGo.transform.SetParent(_testRoot.transform);
+            _obstacleTilemap = obstacleGo.AddComponent<Tilemap>();
+
             var overlayGo = new GameObject("OverlayTilemap");
             overlayGo.transform.SetParent(_testRoot.transform);
             _overlayTilemap = overlayGo.AddComponent<Tilemap>();
             _overlay = overlayGo.AddComponent<TilemapHighlightOverlay>();
 
             _bridge = _testRoot.AddComponent<HexTilemapBridge>();
-            _bridge.Configure(_grid, _walkableTilemap, null);
+            _bridge.Configure(_grid, _walkableTilemap, _obstacleTilemap);
 
             _solidTile = ScriptableObject.CreateInstance<Tile>();
             _solidTile.flags = TileFlags.LockColor; // Default Unity Tile lock flag
@@ -61,24 +66,24 @@ namespace Neymanoff.HexGrid.Unity.Tests
         }
 
         [Test]
-        public void HexTilemapBridge_CellScale_UpdatesGridCellSizePreservingPointyTopRatio()
+        public void HexTilemapBridge_CellScale_UpdatesGridTransformScale()
         {
             _bridge.CellScale = 1.5f;
 
-            float expectedX = HexTilemapBridge.PointyTopAspectRatio * 1.5f;
-            float expectedY = 1.5f;
-
-            Assert.AreEqual(expectedX, _grid.cellSize.x, 0.0001f);
-            Assert.AreEqual(expectedY, _grid.cellSize.y, 0.0001f);
+            Assert.AreEqual(1.5f, _grid.transform.localScale.x, 0.0001f);
+            Assert.AreEqual(1.5f, _grid.transform.localScale.y, 0.0001f);
         }
 
         [Test]
-        public void HexTilemapBridge_CellSpacing_UpdatesGridTransformScale()
+        public void HexTilemapBridge_CellSpacing_UpdatesGridCellSizePreservingPointyTopRatio()
         {
             _bridge.CellSpacing = 1.25f;
 
-            Assert.AreEqual(1.25f, _grid.transform.localScale.x, 0.0001f);
-            Assert.AreEqual(1.25f, _grid.transform.localScale.y, 0.0001f);
+            float expectedX = HexTilemapBridge.PointyTopAspectRatio * 1.25f;
+            float expectedY = 1.25f;
+
+            Assert.AreEqual(expectedX, _grid.cellSize.x, 0.0001f);
+            Assert.AreEqual(expectedY, _grid.cellSize.y, 0.0001f);
         }
 
         [Test]
@@ -153,6 +158,107 @@ namespace Neymanoff.HexGrid.Unity.Tests
             {
                 Object.DestroyImmediate(dummyPrefab);
             }
+        }
+
+        [Test]
+        public void HexGrid3DSpawner_ScansMultipleTilemaps_WalkableAndObstacle()
+        {
+            var spawnerGo = new GameObject("Spawner");
+            spawnerGo.transform.SetParent(_testRoot.transform);
+            var spawner = spawnerGo.AddComponent<HexGrid3DSpawner>();
+
+            // Paint 2 walkable cells and 1 obstacle cell
+            _walkableTilemap.SetTile(new Vector3Int(0, 0, 0), _solidTile);
+            _walkableTilemap.SetTile(new Vector3Int(1, 0, 0), _solidTile);
+            _obstacleTilemap.SetTile(new Vector3Int(2, 0, 0), _solidTile);
+
+            var dummyPrefab = new GameObject("DummyHexPrefab");
+            try
+            {
+                spawner.Configure(_bridge, new[] { _walkableTilemap, _obstacleTilemap }, dummyPrefab);
+                spawner.SpawnGrid();
+
+                Assert.AreEqual(3, spawner.SpawnedInstances.Count, "Spawner should scan both Walkable and Obstacle tilemaps.");
+
+                spawner.ClearGrid();
+                Assert.AreEqual(0, spawner.SpawnedInstances.Count);
+            }
+            finally
+            {
+                Object.DestroyImmediate(dummyPrefab);
+            }
+        }
+
+        [Test]
+        public void HexGrid3DSpawner_AlignsBottomToSurface_CorrectsPivotOffset()
+        {
+            var spawnerGo = new GameObject("Spawner");
+            spawnerGo.transform.SetParent(_testRoot.transform);
+            var spawner = spawnerGo.AddComponent<HexGrid3DSpawner>();
+
+            _walkableTilemap.SetTile(new Vector3Int(0, 0, 0), _solidTile);
+
+            // Create a standard primitive capsule (pivot at center, height = 2, so min.y would be -1)
+            var capsulePrefab = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            try
+            {
+                spawner.Configure(_bridge, new[] { _walkableTilemap }, capsulePrefab);
+                spawner.AlignBottomToSurface = true;
+                spawner.SpawnGrid();
+
+                Assert.AreEqual(1, spawner.SpawnedInstances.Count);
+                var spawnedCapsule = spawner.SpawnedInstances[0];
+                var collider = spawnedCapsule.GetComponent<Collider>();
+
+                Assert.IsNotNull(collider);
+                Assert.AreEqual(1f, spawnedCapsule.transform.position.y, 0.01f, "Capsule transform should be shifted up by 1 unit.");
+                // Bounds min.y should be ~0f (flush on ground), NOT -1f
+                Assert.AreEqual(0f, collider.bounds.min.y, 0.01f, "Capsule bottom should rest flush on Y = 0 surface.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(capsulePrefab);
+            }
+        }
+
+        [Test]
+        public void HexGrid3DSpawner_GeneratesProceduralGreyboxWhenEnabledAndPrefabNull()
+        {
+            var spawnerGo = new GameObject("Spawner");
+            spawnerGo.transform.SetParent(_testRoot.transform);
+            var spawner = spawnerGo.AddComponent<HexGrid3DSpawner>();
+
+            _walkableTilemap.SetTile(new Vector3Int(0, 0, 0), _solidTile);
+
+            // DefaultHexPrefab is null, but GenerateProceduralHexForUnmapped is true
+            spawner.Configure(_bridge, new[] { _walkableTilemap }, null);
+            spawner.GenerateProceduralHexForUnmapped = true;
+            spawner.SpawnGrid();
+
+            Assert.AreEqual(1, spawner.SpawnedInstances.Count);
+            var spawnedInstance = spawner.SpawnedInstances[0];
+            var meshFilter = spawnedInstance.GetComponent<MeshFilter>();
+
+            Assert.IsNotNull(meshFilter, "Procedural hex should have a MeshFilter attached.");
+            Assert.IsNotNull(meshFilter.sharedMesh, "Procedural hex should have a generated Pointy-Top mesh.");
+            Assert.IsTrue(meshFilter.sharedMesh.name.Contains("PointyTop"), "Generated mesh should be Pointy-Top.");
+        }
+
+        [Test]
+        public void HexGrid3DSpawner_SkipsUnmappedTilesByDefaultWhenPrefabNull()
+        {
+            var spawnerGo = new GameObject("Spawner");
+            spawnerGo.transform.SetParent(_testRoot.transform);
+            var spawner = spawnerGo.AddComponent<HexGrid3DSpawner>();
+
+            _walkableTilemap.SetTile(new Vector3Int(0, 0, 0), _solidTile);
+
+            // DefaultHexPrefab is null and GenerateProceduralHexForUnmapped is false by default
+            spawner.Configure(_bridge, new[] { _walkableTilemap }, null);
+            spawner.GenerateProceduralHexForUnmapped = false;
+            spawner.SpawnGrid();
+
+            Assert.AreEqual(0, spawner.SpawnedInstances.Count, "Unmapped tiles should be skipped by default when prefab is null.");
         }
     }
 }

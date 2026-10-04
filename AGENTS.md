@@ -14,15 +14,16 @@
 
 ---
 
-## 2. 3-Tier Anti-Obsolete Defense (Unity 6 Standards)
+## 2. 3-Tier Anti-Obsolete Defense & Zero-Warning Policy (Unity 6 Standards)
 This project targets the exact Unity version recorded in `ProjectSettings/ProjectVersion.txt` and strictly prohibits obsolete Unity APIs (enforced via `Directory.Build.props` with `<WarningsAsErrors>CS0618</WarningsAsErrors>`):
 1. **Never use obsolete methods**:
-   * `FindObjectOfType<T>()` -> Use `FindFirstObjectByType<T>()` or `FindAnyObjectByType<T>()`.
+   * `FindObjectOfType<T>()` and `FindFirstObjectByType<T>()` -> Use `FindAnyObjectByType<T>()`.
    * `UnityEngine.UI.Text` -> Use `TMPro.TextMeshProUGUI`.
    * `WWW` -> Use `UnityEngine.Networking.UnityWebRequest`.
    * `Application.LoadLevel(...)` -> Use `UnityEngine.SceneManagement.SceneManager.LoadScene(...)`.
    * `Random.RandomRange(...)` -> Use `UnityEngine.Random.Range(...)`.
    * Legacy `UnityEngine.Input.*` -> Use Unity 6 Input System (`UnityEngine.InputSystem`).
+2. **Zero-Warning Policy**: All compiler warnings, obsolete API notices (CS0618), and Unity console warnings MUST be treated as errors and resolved immediately. Zero warning tolerance in build and tests.
 
 ---
 

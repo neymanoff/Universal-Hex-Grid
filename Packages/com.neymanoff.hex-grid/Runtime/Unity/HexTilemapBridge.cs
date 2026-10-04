@@ -9,7 +9,7 @@ namespace Neymanoff.HexGrid.Unity
     /// Bridges Unity's native Hexagonal <see cref="Grid"/> and <see cref="Tilemap"/> components with
     /// the pure C# <see cref="HexCoord"/> domain.
     /// Implements <see cref="ITraversalRule"/> to query passability and movement costs directly from painted Tilemaps.
-    /// Exposes reactive Inspector controls for cell dimensions and spacing matching Legends: Legacy of the Lost.
+    /// Exposes reactive Inspector controls for cell dimensions (Cell Scale) and spacing (Cell Spacing) matching Legends: Legacy of the Lost.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hex Grid/Hex Tilemap Bridge")]
@@ -21,10 +21,10 @@ namespace Neymanoff.HexGrid.Unity
         public const float PointyTopAspectRatio = 0.8659766f;
 
         [Header("Grid Geometry Controls (Inspector)")]
-        [Tooltip("Scale multiplier for individual hexagon cells. Automatically preserves the Pointy-Top aspect ratio (0.8659766 : 1.0).")]
+        [Tooltip("Visual size multiplier of the hexagon cells (controls cell scale via Grid transform scale).")]
         [SerializeField] private float _cellScale = 1.0f;
 
-        [Tooltip("Spacing multiplier for the distance between hexagon cells (applied to Grid transform scale, matching Legends: Legacy of the Lost).")]
+        [Tooltip("Distance multiplier between hexagon cell centers (controls cell spacing and gaps via Grid cellSize. 1.0 = edge-to-edge touch).")]
         [SerializeField] private float _cellSpacing = 1.0f;
 
         [Header("Grid & Tilemap References")]
@@ -36,6 +36,9 @@ namespace Neymanoff.HexGrid.Unity
 
         [Tooltip("Optional Tilemap containing obstacle/blocking tiles (water, rocks, walls).")]
         [SerializeField] private Tilemap _obstacleTilemap;
+
+        [Tooltip("The overlay component handling visual highlights on child Highlight Overlay object.")]
+        [SerializeField] private TilemapHighlightOverlay _highlightOverlay;
 
         [Header("Traversal Configuration")]
         [Tooltip("Default movement cost to enter a walkable cell.")]
@@ -51,6 +54,7 @@ namespace Neymanoff.HexGrid.Unity
         public Grid Grid => _grid;
         public Tilemap WalkableTilemap => _walkableTilemap;
         public Tilemap ObstacleTilemap => _obstacleTilemap;
+        public TilemapHighlightOverlay HighlightOverlay => _highlightOverlay;
 
         public float CellScale
         {
@@ -79,45 +83,88 @@ namespace Neymanoff.HexGrid.Unity
         }
 
         /// <summary>
-        /// Dynamically updates the parent <see cref="Grid.cellSize"/> and <see cref="Grid.transform.localScale"/>
-        /// using current scale and spacing settings while maintaining pointy-top proportions.
+        /// Dynamically updates the parent <see cref="Grid.transform.localScale"/> (visual cell size)
+        /// and <see cref="Grid.cellSize"/> (distance between cell centers) maintaining pointy-top proportions.
         /// </summary>
         public void ApplyGridDimensions()
         {
             if (_grid == null) return;
-            _grid.cellSize = new Vector3(PointyTopAspectRatio * _cellScale, 1f * _cellScale, 1f);
-            _grid.transform.localScale = new Vector3(_cellSpacing, _cellSpacing, 1f);
+            var targetScale = new Vector3(_cellScale, _cellScale, 1f);
+            if (_grid.transform.localScale != targetScale)
+            {
+                _grid.transform.localScale = targetScale;
+            }
+
+            var targetCellSize = new Vector3(PointyTopAspectRatio * _cellSpacing, 1f * _cellSpacing, 1f);
+            if (_grid.cellSize != targetCellSize)
+            {
+                _grid.cellSize = targetCellSize;
+            }
         }
 
         /// <summary>
         /// Explicitly wires the bridge dependencies without requiring reflection.
         /// </summary>
-        public void Configure(Grid grid, Tilemap walkableTilemap, Tilemap obstacleTilemap)
+        public void Configure(Grid grid, Tilemap walkableTilemap, Tilemap obstacleTilemap, TilemapHighlightOverlay highlightOverlay = null)
         {
             _grid = grid;
             _walkableTilemap = walkableTilemap;
             _obstacleTilemap = obstacleTilemap;
+            if (highlightOverlay != null) _highlightOverlay = highlightOverlay;
             ApplyGridDimensions();
         }
 
         private void Reset()
         {
             if (_grid == null) _grid = GetComponentInParent<Grid>();
-            if (_walkableTilemap == null) _walkableTilemap = GetComponent<Tilemap>();
-            ApplyGridDimensions();
+            if (_walkableTilemap == null) _walkableTilemap = GetComponentInChildren<Tilemap>();
+            if (_highlightOverlay == null) _highlightOverlay = GetComponentInChildren<TilemapHighlightOverlay>();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    if (this != null && _grid != null)
+                        ApplyGridDimensions();
+                };
+            }
+#endif
         }
+
+#if UNITY_EDITOR
+        private bool _isUpdatePending;
 
         private void OnValidate()
         {
             if (_grid == null) _grid = GetComponentInParent<Grid>();
+            if (_walkableTilemap == null) _walkableTilemap = GetComponentInChildren<Tilemap>();
+            if (_highlightOverlay == null) _highlightOverlay = GetComponentInChildren<TilemapHighlightOverlay>();
             if (_cellScale < 0.01f) _cellScale = 1.0f;
             if (_cellSpacing < 0.01f) _cellSpacing = 1.0f;
-            ApplyGridDimensions();
+
+            if (!_isUpdatePending)
+            {
+                _isUpdatePending = true;
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    _isUpdatePending = false;
+                    if (this != null && _grid != null)
+                    {
+                        ApplyGridDimensions();
+                    }
+                };
+            }
         }
+#endif
 
         private void Awake()
         {
             if (_grid == null) _grid = GetComponentInParent<Grid>();
+            if (_highlightOverlay == null) _highlightOverlay = GetComponentInChildren<TilemapHighlightOverlay>();
+        }
+
+        private void Start()
+        {
             ApplyGridDimensions();
         }
 

@@ -17,13 +17,13 @@
   - Tactical angled camera ($50^\circ$, height $7.5$).
   - 53/53 EditMode NUnit tests passing. Verified by developer in PlayMode.
 
-- [IMPLEMENTED] **Step 2: Visual Highlighting Flexibility & Inspector Dimensions**
-  - **TileFlags.LockColor Bugfix**: `TilemapHighlightOverlay` clears `TileFlags.LockColor` before calling `SetColor` so Inspector tint colors (blue, yellow, green, red) actually render on the screen.
-  - **Cell Scale & Spacing Inspector Controls**: Exposed `_cellScale` and `_cellSpacing` in `HexTilemapBridge` Inspector matching `Legends: Legacy of the Lost` (`CellVisualFormatter.ApplyCellScaling` and `ApplyCellSpacing`).
-  - **Outline / Contour Highlighting**: Generated `HexagonPointTop_Outline.png` sprite and `HexTile_Highlight_Outline.asset`. Implemented `HighlightRenderMode` (Solid vs Outline) allowing transparent-center edge framing that leaves background terrain artwork 100% visible.
-  - **3D Modular Hex Spawner Foundation (`HexGrid3DSpawner`)**: Created component mapping 2D painted Tilemap cells to physical 3D hex prefabs/meshes with clean spawn and cleanup routines.
-  - **Menu Item Sync**: `HexGridMenuCommands` creates grid with outline tile, solid tile, bridge controls, and 3D spawner wired out-of-the-box.
-  - **Verification Status**: 58/58 EditMode NUnit tests passed via Unity batchmode CLI (`ExitCode: 0`). Awaiting developer PlayMode testing for `[VERIFIED]`.
+- [IMPLEMENTED] **Step 2.1: 3D Spawner Multi-Tilemap Support, Surface Alignment & Zero-Warning Obsolete Fix**
+  - **Multi-Tilemap Source List**: Replaced single `_sourceTilemap` with `List<Tilemap> _sourceTilemaps`, auto-wired by default to both `Walkable Tilemap` and `Obstacle Tilemap` from `HexTilemapBridge` (supporting custom additional layers).
+  - **Skip Unmapped Cells by Default**: Unmapped tiles without prefabs are strictly skipped (no unwanted 3D models over unmapped ground; 2D underlying artwork and contour outlines remain 100% visible). Optional `_generateProceduralHexForUnmapped` toggle available.
+  - **Bottom-to-Surface Alignment (`_alignBottomToSurface`)**: Calculates exact local collider/renderer geometry and offsets spawned instances with `Physics.SyncTransforms()` so object base rests flush on the cell surface ($Y = 0$) rather than sinking at center.
+  - **Tilemap Visibility Control**: `_hideTilemapsOnSpawn` defaults to false so 2D terrain artwork stays visible beneath 3D props/trees.
+  - **SendMessage & Obsolete Warning Fixes**: Moved `ApplyGridDimensions()` in `HexTilemapBridge` from `Awake()` to `Start()`. Replaced obsolete `FindFirstObjectByType` in `GridMover` with modern `FindAnyObjectByType`. Recorded Zero-Warning Policy in `AGENTS.md`.
+  - **Verification Status**: 72/72 EditMode NUnit tests passed via Unity 6 batchmode CLI (`ExitCode: 0`). Zero warnings, zero errors. Awaiting developer PlayMode testing for `[VERIFIED]`.
 
 ---
 
