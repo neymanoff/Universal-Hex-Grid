@@ -1,0 +1,17 @@
+{
+    "name": "Neymanoff.HexGrid.Unity",
+    "rootNamespace": "Neymanoff.HexGrid.Unity",
+    "references": [
+        "Neymanoff.HexGrid.Core",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

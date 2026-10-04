@@ -1,0 +1,19 @@
+{
+    "name": "Neymanoff.HexGrid.Editor",
+    "rootNamespace": "Neymanoff.HexGrid.Editor",
+    "references": [
+        "Neymanoff.HexGrid.Core",
+        "Neymanoff.HexGrid.Unity"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

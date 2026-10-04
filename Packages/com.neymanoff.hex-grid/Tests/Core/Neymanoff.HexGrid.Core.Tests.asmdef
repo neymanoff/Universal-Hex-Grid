@@ -1,0 +1,21 @@
+{
+    "name": "Neymanoff.HexGrid.Core.Tests",
+    "rootNamespace": "Neymanoff.HexGrid.Core.Tests",
+    "references": [
+        "Neymanoff.HexGrid.Core"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

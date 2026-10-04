@@ -9,7 +9,7 @@
 
 | Phase | Milestone | Priority | Status |
 | :--- | :--- | :---: | :---: |
-| **Phase 0** | UPM Package Skeleton & Assembly Definitions | 🔴 Critical | ⏳ Pending |
+| **Phase 0** | UPM Package Skeleton & Assembly Definitions | 🔴 Critical | ✅ Done |
 | **Phase 1** | Pure C# Hexagonal Coordinate Math (`HexCoord`) | 🔴 Critical | ⏳ Pending |
 | **Phase 2** | Pure C# Pathfinding & Reachable Zone (`HexPathfinder`, `HexFloodFill`) | 🔴 Critical | ⏳ Pending |
 | **Phase 3** | Geometric Targeting & AOE Resolver (`HexTargetResolver`) | 🟡 High | ⏳ Pending |
@@ -20,19 +20,19 @@
 ---
 
 ## Phase 0: UPM Package Skeleton & AsmDefs
-- [ ] **0.1. Directory Structure**:
-  - [ ] `Packages/com.neymanoff.hex-grid/Runtime/Core/` (Pure C# domain).
-  - [ ] `Packages/com.neymanoff.hex-grid/Runtime/Unity/` (Tilemap presentation adapter).
-  - [ ] `Packages/com.neymanoff.hex-grid/Editor/` (Optional Editor helpers).
-  - [ ] `Packages/com.neymanoff.hex-grid/Tests/Core/` (Pure C# NUnit tests).
-  - [ ] `Packages/com.neymanoff.hex-grid/Tests/Unity/` (Unity integration tests).
-  - [ ] `Packages/com.neymanoff.hex-grid/Samples~/Demo/` (Greybox demo scene & assets).
-- [ ] **0.2. Assembly Definitions**:
-  - [ ] `Neymanoff.HexGrid.Core.asmdef` (`noEngineReferences: true`, pure .NET Standard 2.1).
-  - [ ] `Neymanoff.HexGrid.Unity.asmdef` (references `Neymanoff.HexGrid.Core`, `Unity.InputSystem`, `UnityEngine.Tilemaps`).
-  - [ ] `Neymanoff.HexGrid.Core.Tests.asmdef` (tests for pure math/pathfinding).
-  - [ ] `Neymanoff.HexGrid.Unity.Tests.asmdef` (tests for Tilemap bridge).
-  - [ ] `Neymanoff.HexGrid.Demo.asmdef` (demo interaction scripts).
+- [x] **0.1. Directory Structure**:
+  - [x] `Packages/com.neymanoff.hex-grid/Runtime/Core/` (Pure C# domain).
+  - [x] `Packages/com.neymanoff.hex-grid/Runtime/Unity/` (Tilemap presentation adapter).
+  - [x] `Packages/com.neymanoff.hex-grid/Editor/` (Optional Editor helpers).
+  - [x] `Packages/com.neymanoff.hex-grid/Tests/Core/` (Pure C# NUnit tests).
+  - [x] `Packages/com.neymanoff.hex-grid/Tests/Unity/` (Unity integration tests).
+  - [x] `Packages/com.neymanoff.hex-grid/Samples~/Demo/` (Greybox demo scene & assets).
+- [x] **0.2. Assembly Definitions**:
+  - [x] `Neymanoff.HexGrid.Core.asmdef` (`noEngineReferences: true`, pure .NET Standard 2.1).
+  - [x] `Neymanoff.HexGrid.Unity.asmdef` (references `Neymanoff.HexGrid.Core`, `Unity.InputSystem`).
+  - [x] `Neymanoff.HexGrid.Core.Tests.asmdef` (tests for pure math/pathfinding).
+  - [x] `Neymanoff.HexGrid.Unity.Tests.asmdef` (tests for Tilemap bridge).
+  - [x] `Neymanoff.HexGrid.Demo.asmdef` (demo interaction scripts).
 
 ---
 
