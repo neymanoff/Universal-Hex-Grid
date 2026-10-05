@@ -94,6 +94,12 @@ namespace Neymanoff.HexGrid.Unity
             set => _mirrorY = value;
         }
 
+        public FormationPatternSO InitialPattern
+        {
+            get => _initialPattern;
+            set => _initialPattern = value;
+        }
+
         public UnityEvent<IReadOnlyList<RectTransform>> OnLayoutRebuilt => _onLayoutRebuilt;
 
         private void Awake()

@@ -5,6 +5,30 @@ All notable changes to the `com.neymanoff.hex-grid` package will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-10-05
+
+### Added
+- **Tactical Squad Formations & Spawners (`Neymanoff.HexGrid.Unity` & `Neymanoff.HexGrid.Core`)**:
+  - `CellOwner`: Faction categorization enum (`Neutral`, `Player`, `Enemy`, `Ally`).
+  - Integer cubic hex rotation in `HexCoord` (`RotateCw`, `RotateCcw`) supporting all 6 orientation steps (0°..300°).
+  - `FormationPlanner`: Anchored layout solver with `FrontRowCenter` and `Origin` alignment modes.
+  - `FormationPatternSO`: ScriptableObject asset for data-driven formation patterns with presets (2-3, 3-2, 1-2-1, Line, Wedge) and Tilemap baking (`BakeFromTilemap`).
+  - `HexFormationAnchor`: Tactical squad anchor calculating spatial slot positions and orientations with live Scene View gizmos.
+  - `HexSpawnPoint`: Single-entity spawner for world map entities, bosses, and patrols.
+  - `GridOccupant`: MonoBehaviour component binding entities to `HexOccupancyMap`.
+- **Pre-Battle UI Formations & Preview**:
+  - `HexUiLayoutConverter`: Converts axial coordinates and formation patterns into uGUI pixel positions with Pointy-Top staggering, gap spacing, and auto-centering.
+  - `HexTilemapSampler`: Samples non-empty hex tiles from authored Tilemaps with canonical sorting.
+  - `HexFormationPreviewUI`: Pointy-top hex formation preview canvas component.
+  - `HexFormationSelectorUI`: Pre-battle formation selection menu with button generation and real-time linked preview updates.
+- **3D Modular Hex Spawner Enhancements (`HexGrid3DSpawner`)**:
+  - Multi-tilemap source scanning (`_sourceTilemaps`) combining walkable, obstacle, and custom layers.
+  - Per-tile scaling (`Scale`) and Euler rotation (`RotationOffset`) in `TilePrefabMapping` preserving base prefab scales at (1, 1, 1).
+  - Bottom-to-surface alignment (`_alignBottomToSurface`) placing 3D meshes flush on ground surface ($Y = 0$).
+  - `_hideTilemapsOnSpawn` option preserving 2D terrain art under 3D props.
+- **Automated Tests**:
+  - Expanded EditMode NUnit test suite to 92 tests with 100% pass rate and zero warnings.
+
 ## [1.0.0] - 2026-10-04
 
 ### Added

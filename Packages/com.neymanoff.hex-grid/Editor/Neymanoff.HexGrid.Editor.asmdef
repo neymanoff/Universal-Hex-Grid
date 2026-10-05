@@ -3,7 +3,8 @@
     "rootNamespace": "Neymanoff.HexGrid.Editor",
     "references": [
         "Neymanoff.HexGrid.Core",
-        "Neymanoff.HexGrid.Unity"
+        "Neymanoff.HexGrid.Unity",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

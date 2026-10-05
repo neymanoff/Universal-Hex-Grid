@@ -1,7 +1,7 @@
 {
   "name": "com.neymanoff.hex-grid",
   "displayName": "Universal Hex Grid & Targeting Engine",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "unity": "6000.5",
   "description": "High-performance modular hexagonal grid, A* pathfinding, and spatial targeting engine for tactical RPGs. Built on Unity Tilemap with a pure C# headless core.",
   "keywords": [

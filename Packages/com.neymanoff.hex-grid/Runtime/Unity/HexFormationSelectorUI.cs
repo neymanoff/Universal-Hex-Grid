@@ -41,6 +41,16 @@ namespace Neymanoff.HexGrid.Unity
         public UnityEvent<FormationPatternSO> OnFormationChanged => _onFormationChanged;
 
         public IReadOnlyList<FormationPatternSO> Formations => _formations;
+
+        public void SetFormations(IEnumerable<FormationPatternSO> formations)
+        {
+            _formations.Clear();
+            if (formations != null)
+            {
+                _formations.AddRange(formations);
+            }
+        }
+
         public FormationPatternSO SelectedFormation { get; private set; }
         public int SelectedIndex { get; private set; } = -1;
 
