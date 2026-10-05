@@ -148,6 +148,34 @@ namespace Neymanoff.HexGrid.Core
             return (col, row);
         }
 
+        /// <summary>
+        /// Rotates this axial coordinate around the origin (0, 0) clockwise by the specified number of 60-degree steps.
+        /// Pure integer cubic arithmetic (steps modulo 6).
+        /// </summary>
+        public HexCoord RotateCw(int steps = 1)
+        {
+            int mod = (steps % 6 + 6) % 6;
+            int x = Q;
+            int z = R;
+            int y = -x - z;
+
+            switch (mod)
+            {
+                case 0: return this;
+                case 1: return new HexCoord(-y, -x); // 60° CW:  (x', y', z') = (-y, -z, -x) => Q' = -y, R' = -x
+                case 2: return new HexCoord(z, y);   // 120° CW: (x', y', z') = (z, x, y)   => Q' = z,  R' = y
+                case 3: return new HexCoord(-x, -z); // 180°:    (x', y', z') = (-x, -y, -z) => Q' = -x, R' = -z
+                case 4: return new HexCoord(y, x);   // 240° CW: (x', y', z') = (y, z, x)   => Q' = y,  R' = x
+                case 5: return new HexCoord(-z, -y); // 300° CW: (x', y', z') = (-z, -x, -y) => Q' = -z, R' = -y
+                default: return this;
+            }
+        }
+
+        /// <summary>
+        /// Rotates this axial coordinate around the origin (0, 0) counter-clockwise by the specified number of 60-degree steps.
+        /// </summary>
+        public HexCoord RotateCcw(int steps = 1) => RotateCw(-steps);
+
         // --- Arithmetic Operators ---
 
         public static HexCoord operator +(HexCoord a, HexCoord b) => new(a.Q + b.Q, a.R + b.R);
