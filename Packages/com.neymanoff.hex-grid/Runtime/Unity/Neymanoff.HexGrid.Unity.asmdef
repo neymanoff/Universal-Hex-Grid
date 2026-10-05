@@ -3,7 +3,8 @@
     "rootNamespace": "Neymanoff.HexGrid.Unity",
     "references": [
         "Neymanoff.HexGrid.Core",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

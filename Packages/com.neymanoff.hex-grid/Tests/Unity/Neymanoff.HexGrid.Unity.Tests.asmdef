@@ -4,7 +4,8 @@
     "references": [
         "Neymanoff.HexGrid.Core",
         "Neymanoff.HexGrid.Unity",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
