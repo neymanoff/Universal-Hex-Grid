@@ -260,5 +260,79 @@ namespace Neymanoff.HexGrid.Unity.Tests
 
             Assert.AreEqual(0, spawner.SpawnedInstances.Count, "Unmapped tiles should be skipped by default when prefab is null.");
         }
+
+        [Test]
+        public void HexGrid3DSpawner_PerTileMapping_AppliesScaleAndRotationOffset()
+        {
+            var spawnerGo = new GameObject("Spawner");
+            spawnerGo.transform.SetParent(_testRoot.transform);
+            var spawner = spawnerGo.AddComponent<HexGrid3DSpawner>();
+
+            _walkableTilemap.SetTile(new Vector3Int(0, 0, 0), _solidTile);
+
+            var dummyPrefab = new GameObject("ScaledRotatedPrefab");
+            dummyPrefab.transform.localScale = new Vector3(2f, 2f, 2f);
+
+            try
+            {
+                spawner.Configure(_bridge, new[] { _walkableTilemap }, null);
+                spawner.TileMappings.Add(new TilePrefabMapping
+                {
+                    Tile = _solidTile,
+                    Prefab = dummyPrefab,
+                    Scale = new Vector3(0.5f, 0.25f, 0.5f),
+                    RotationOffset = new Vector3(0f, 90f, 0f)
+                });
+
+                spawner.SpawnGrid();
+
+                Assert.AreEqual(1, spawner.SpawnedInstances.Count);
+                var instance = spawner.SpawnedInstances[0];
+
+                // Expected scale: prefab.localScale (2,2,2) * globalScale (1,1,1) * perTileScale (0.5, 0.25, 0.5) = (1.0, 0.5, 1.0)
+                Assert.AreEqual(1.0f, instance.transform.localScale.x, 0.001f);
+                Assert.AreEqual(0.5f, instance.transform.localScale.y, 0.001f);
+                Assert.AreEqual(1.0f, instance.transform.localScale.z, 0.001f);
+
+                // Expected rotation: global rotation (0,0,0) + perTile (0,90,0) = (0, 90, 0)
+                Assert.AreEqual(90f, instance.transform.rotation.eulerAngles.y, 0.01f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(dummyPrefab);
+            }
+        }
+
+        [Test]
+        public void HexGrid3DSpawner_HideTilemapsOnSpawn_Preserves2DArtWhenFalse()
+        {
+            var spawnerGo = new GameObject("Spawner");
+            spawnerGo.transform.SetParent(_testRoot.transform);
+            var spawner = spawnerGo.AddComponent<HexGrid3DSpawner>();
+
+            var renderer = _walkableTilemap.gameObject.AddComponent<TilemapRenderer>();
+            renderer.enabled = true;
+
+            var dummyPrefab = new GameObject("DummyHexPrefab");
+            try
+            {
+                _walkableTilemap.SetTile(new Vector3Int(0, 0, 0), _solidTile);
+                spawner.Configure(_bridge, new[] { _walkableTilemap }, dummyPrefab);
+                spawner.HideTilemapsOnSpawn = false;
+                spawner.SpawnGrid();
+
+                Assert.IsTrue(renderer.enabled, "TilemapRenderer should remain enabled when HideTilemapsOnSpawn is false.");
+
+                spawner.ClearGrid();
+                spawner.HideTilemapsOnSpawn = true;
+                spawner.SpawnGrid();
+
+                Assert.IsFalse(renderer.enabled, "TilemapRenderer should be disabled when HideTilemapsOnSpawn is true.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(dummyPrefab);
+            }
+        }
     }
 }

@@ -18,8 +18,16 @@ namespace Neymanoff.HexGrid.Unity
         [Tooltip("The corresponding 3D physical prefab (e.g. low-poly terrain mesh) to instantiate.")]
         public GameObject Prefab;
 
+        [Tooltip("Custom scale applied specifically to this tile's spawned instance (defaults to (1, 1, 1) if left at (0, 0, 0)).")]
+        public Vector3 Scale;
+
+        [Tooltip("Individual Euler rotation offset applied specifically to this tile's spawned instance.")]
+        public Vector3 RotationOffset;
+
         [Tooltip("Per-prefab vertical height adjustment applied on top of the surface alignment.")]
         public float VerticalOffset;
+
+        public Vector3 EffectiveScale => Scale == Vector3.zero ? Vector3.one : Scale;
     }
 
     /// <summary>
@@ -80,6 +88,7 @@ namespace Neymanoff.HexGrid.Unity
         public bool AlignBottomToSurface { get => _alignBottomToSurface; set => _alignBottomToSurface = value; }
         public bool HideTilemapsOnSpawn { get => _hideTilemapsOnSpawn; set => _hideTilemapsOnSpawn = value; }
         public bool GenerateProceduralHexForUnmapped { get => _generateProceduralHexForUnmapped; set => _generateProceduralHexForUnmapped = value; }
+        public List<TilePrefabMapping> TileMappings => _tileMappings;
 
         private void Reset()
         {
@@ -163,7 +172,7 @@ namespace Neymanoff.HexGrid.Unity
                         var tile = tilemap.GetTile(cell);
                         if (tile == null) continue;
 
-                        var prefab = ResolvePrefabForTile(tile, out float perTileOffset);
+                        var prefab = ResolvePrefabForTile(tile, out float perTileOffset, out Vector3 perTileScale, out Vector3 perTileRotation);
 
                         var worldPos = _bridge != null
                             ? _bridge.HexToWorld(HexTilemapBridge.TilemapCellToHex(cell))
@@ -173,9 +182,10 @@ namespace Neymanoff.HexGrid.Unity
 
                         if (prefab != null)
                         {
-                            var rot = Quaternion.Euler(_rotationOffset);
+                            var rot = Quaternion.Euler(_rotationOffset + perTileRotation);
                             var instance = Instantiate(prefab, worldPos, rot, container);
-                            instance.transform.localScale = _instanceScale;
+                            Vector3 effectiveScale = Vector3.Scale(prefab.transform.localScale, Vector3.Scale(_instanceScale, perTileScale));
+                            instance.transform.localScale = effectiveScale;
                             instance.name = $"Hex3D_{cell.x}_{cell.y}_{tile.name}";
 
                             // Apply bottom-to-surface alignment so bottom rests at worldPos.y
@@ -285,17 +295,23 @@ namespace Neymanoff.HexGrid.Unity
             }
         }
 
-        private GameObject ResolvePrefabForTile(TileBase tile, out float perTileOffset)
+        private GameObject ResolvePrefabForTile(TileBase tile, out float perTileOffset, out Vector3 perTileScale, out Vector3 perTileRotation)
         {
             perTileOffset = 0f;
+            perTileScale = Vector3.one;
+            perTileRotation = Vector3.zero;
+
             if (tile != null && _tileMappings != null)
             {
                 for (int i = 0; i < _tileMappings.Count; i++)
                 {
                     if (_tileMappings[i].Tile == tile && _tileMappings[i].Prefab != null)
                     {
-                        perTileOffset = _tileMappings[i].VerticalOffset;
-                        return _tileMappings[i].Prefab;
+                        var mapping = _tileMappings[i];
+                        perTileOffset = mapping.VerticalOffset;
+                        perTileScale = mapping.EffectiveScale;
+                        perTileRotation = mapping.RotationOffset;
+                        return mapping.Prefab;
                     }
                 }
             }
